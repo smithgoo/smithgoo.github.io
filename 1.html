@@ -21,42 +21,10 @@ function foo(data) {
   console.log('response data: ' + JSON.stringify(data));
   var json = data.data[0];
   window.alert(data);
-<!--  console.log(json.location);-->
-<!--  if (json.location.indexOf("广州")!=-1) {-->
-<!--    console.log("广州");-->
-<!--    window.location.href = "http://www.baidu.com";-->
-<!--  }else{-->
-<!--    console.log("qita");-->
-<!--    window.location.href = "http://www.jd.com";-->
-<!--  }-->
-
 };    
 window.onload = function () {
-<!--  addScriptTag('https://sp0.baidu.com/8aQDcjqpAAV3otqbppnN2DJv/api.php?query=ip&co=&resource_id=6006&t=1562124098965&ie=utf8&oe=gbk&cb=foo&format=json&tn=baidu');-->
-<!--    GetLocalIPAddress();-->
  document.write(returnCitySN['cip']);
 }
-</script>
-
-<script>
-    function GetLocalIPAddress()
-    {
-        var obj = null;
-        var rslt = "";
-        try
-        {
-            obj = new ActiveXObject("rcbdyctl.Setting");
-            rslt = obj.GetIPAddress;
-            obj = null;
-        }
-        catch(e)
-        {
-            //异常发生
-        }
-        return rslt;
-    }
-document.write("你的IP是：" + GetLocalIPAddress());
-//-->
 </script>
 
 <script src="http://pv.sohu.com/cityjson?ie=utf-8"></script>
