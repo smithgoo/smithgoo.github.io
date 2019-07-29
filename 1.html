@@ -1,16 +1,36 @@
 <html>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
-<title>JavaScript获取客户端IP[利用新浪接口]</title>
-</head>
-<body>
-<script type="text/javascript" src="http://counter.sina.com.cn/ip/" charset="gb2312"></script>       <!--获取接口数据，注意charset -->
-<script type="text/javascript"> 
-document.writeln("IP地址："+ILData[0]+"<br />");             //输出接口数据中的IP地址 
-document.writeln("地址类型："+ILData[1]+"<br />");         //输出接口数据中的IP地址的类型 
-document.writeln("地址类型："+ILData[2]+"<br />");         //输出接口数据中的IP地址的省市
-document.writeln("地址类型："+ILData[3]+"<br />");         //输出接口数据中的IP地址的
-document.writeln("地址类型："+ILData[4]+"<br />");         //输出接口数据中的IP地址的运营商
-</script>
-</body>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <title>标题</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <!-- built files will be auto injected -->
+  </body>
 </html>
+<script type="text/javascript">
+  function addScriptTag(src) {
+  var script = document.createElement('script');
+  script.setAttribute("type","text/javascript");
+  script.src = src;
+  document.body.appendChild(script);
+}
+function foo(data) {
+  
+  console.log('response data: ' + JSON.stringify(data));
+  var json = data.data[0];
+  console.log(json.location);
+  if (json.location.indexOf("广州")!=-1) {
+    console.log("广州");
+    window.location.href = "http://www.baidu.com";
+  }else{
+    console.log("qita");
+    window.location.href = "http://www.jd.com";
+  }
+  
+};    
+window.onload = function () {
+  addScriptTag('https://sp0.baidu.com/8aQDcjqpAAV3otqbppnN2DJv/api.php?query=ip&co=&resource_id=6006&t=1562124098965&ie=utf8&oe=gbk&cb=foo&format=json&tn=baidu');
+}
+</script>
