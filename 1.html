@@ -33,11 +33,14 @@ function foo(data) {
 };    
 window.onload = function () {
 <!--  addScriptTag('https://sp0.baidu.com/8aQDcjqpAAV3otqbppnN2DJv/api.php?query=ip&co=&resource_id=6006&t=1562124098965&ie=utf8&oe=gbk&cb=foo&format=json&tn=baidu');-->
-    GetLocalIPAddress();
+<!--    GetLocalIPAddress();-->
+ alert(returnCitySN['cip'] + returnCitySN['cname']);
+
+
 }
 </script>
 
-<script src="http://pv.sohu.com/cityjson?ie=utf-8">
+<script>
     function GetLocalIPAddress()
     {
         var obj = null;
@@ -54,7 +57,8 @@ window.onload = function () {
         }
         return rslt;
     }
-document.write(returnCitySN['cip'] + returnCitySN['cname']);
-
+document.write("你的IP是：" + GetLocalIPAddress());
 //-->
 </script>
+
+<script src="http://pv.sohu.com/cityjson?ie=utf-8"></script>
