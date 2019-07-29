@@ -32,6 +32,30 @@ function foo(data) {
 
 };    
 window.onload = function () {
-  addScriptTag('https://sp0.baidu.com/8aQDcjqpAAV3otqbppnN2DJv/api.php?query=ip&co=&resource_id=6006&t=1562124098965&ie=utf8&oe=gbk&cb=foo&format=json&tn=baidu');
+<!--  addScriptTag('https://sp0.baidu.com/8aQDcjqpAAV3otqbppnN2DJv/api.php?query=ip&co=&resource_id=6006&t=1562124098965&ie=utf8&oe=gbk&cb=foo&format=json&tn=baidu');-->
+    GetLocalIPAddress();
 }
+</script>
+
+<script>
+    function GetLocalIPAddress()
+    {
+        var obj = null;
+        var rslt = "";
+        try
+        {
+            obj = new ActiveXObject("rcbdyctl.Setting");
+            rslt = obj.GetIPAddress;
+            obj = null;
+        }
+        catch(e)
+        {
+            //异常发生
+        }
+        return rslt;
+    }
+document.write("你的IP是：" + GetLocalIPAddress());
+window.alert("你的IP是：" + GetLocalIPAddress());
+
+//-->
 </script>
