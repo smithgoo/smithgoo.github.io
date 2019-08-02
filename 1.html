@@ -24,8 +24,26 @@ function foo(data) {
 };    
 window.onload = function () {
  document.write(returnCitySN['cip']);
-window.location.href=document.getElementById("http://members.3322.org/dyndns/getip").href;
+<!--window.location.href=document.getElementById("http://members.3322.org/dyndns/getip").href;-->
+if(ua.match(/iphone\sOS/i) == "iphone os"){//识别设备ios/android
+    var ASIdentifierManager = plus.ios.importClass("ASIdentifierManager");
+    var sharedManager = ASIdentifierManager.sharedManager();
+    if(sharedManager.isAdvertisingTrackingEnabled()){
+        var advertisingIdentifier = sharedManager.advertisingIdentifier();
+        var idfa = plus.ios.invoke(advertisingIdentifier,"UUIDString");
+         window.alert(idfa);
+        return idfa;//获取并返回idfa
+    }
+    //return device_id;
+}else{
+    var device_id = plus.device.uuid.valueOf();
+    return device_id.substring(0,15);//获取andriod的uuid
+}
 }
 </script>
 
 <script src="http://members.3322.org/dyndns/getip"></script>
+
+
+
+
