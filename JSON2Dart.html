@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>JSON ↔ String → Dart Model 生成器</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+    input, textarea, button { font-family: monospace; }
+    input { padding: 6px 10px; font-size: 15px; width: 300px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #ccc; color: #333; }
+    input::placeholder { color: #aaa; }
+    textarea { width: 100%; height: 240px; padding: 10px; border-radius: 6px; border: 1px solid #ccc; resize: vertical; }
+    button { padding: 10px 18px; font-size: 15px; border: none; border-radius: 6px; cursor: pointer; margin-right: 6px; transition: 0.2s; }
+    button:hover { opacity: 0.9; }
+    .generate-btn { background-color: #4caf50; color: white; }
+    .copy-btn { background-color: #2196f3; color: white; }
+    .download-btn { background-color: #ff9800; color: white; }
+    .convert-btn { background-color: #9c27b0; color: white; width: 40px; height: 40px; font-size: 18px; margin: auto; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+
+    .flex-container { display: flex; gap: 10px; margin-bottom: 10px; }
+    .flex-container textarea { flex: 1; }
+    .arrow-container { display: flex; align-items: center; justify-content: center; }
+    .button-group { margin-bottom: 10px; }
+
+    /* 输出框样式 */
+    .output-box {
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 10px;
+      height: 300px;       /* 固定高度 */
+      overflow: auto;      /* 内容超出时滚动 */
+      white-space: pre;    /* 保留 Dart 代码缩进 */
+      font-family: monospace;
+      font-size: 14px;
+    }
+
+    /* 提示框样式 */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 9999;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <h1>JSON ↔ String → Dart Model 生成器</h1>
+  <label>模型类名: <input id="modelName" type="text" placeholder="MakeModel" value="MakeModel"></label><br>
+
+  <div class="flex-container">
+    <textarea id="jsonInput" placeholder="JSON 数据"></textarea>
+    <div class="arrow-container">
+      <button class="convert-btn" onclick="convertJsonString()">⇄</button>
+    </div>
+    <textarea id="stringInput" placeholder='字符串 {"key":"value"}'></textarea>
+  </div>
+
+  <div class="button-group">
+    <button class="generate-btn" onclick="generateDart()">生成 Dart Model</button>
+    <button class="copy-btn" onclick="copyDart()">复制</button>
+    <button class="download-btn" onclick="downloadDart()">下载</button>
+  </div>
+
+  <h2>生成结果</h2>
+  <div id="dartOutput" class="output-box"></div>
+
+  <!-- 提示框容器 -->
+  <div id="toast" class="toast">已复制到剪贴板</div>
+
+  <script>
+    function capitalize(s){ if(!s) return s; return s.charAt(0).toUpperCase() + s.slice(1); }
+    let classOrder = [];
+    let generated = {};
+
+    // 左右转换箭头按钮
+    function convertJsonString(){
+      const jsonEl = document.getElementById('jsonInput');
+      const strEl = document.getElementById('stringInput');
+      try {
+        if(jsonEl.value.trim()){
+          const obj = JSON.parse(jsonEl.value);
+          strEl.value = JSON.stringify(obj);
+        } else if(strEl.value.trim()){
+          const obj = JSON.parse(strEl.value);
+          jsonEl.value = JSON.stringify(obj, null, 2);
+        }
+      } catch(e){
+        alert('解析失败，请确保输入内容是合法 JSON 字符串');
+      }
+    }
+
+    // JSON 输入框实时美化
+    const jsonInputEl = document.getElementById('jsonInput');
+    jsonInputEl.addEventListener('input', ()=>{
+      try{
+        const obj = JSON.parse(jsonInputEl.value);
+        jsonInputEl.value = JSON.stringify(obj, null, 2);
+      }catch(e){ /* 不合法 JSON 不处理 */ }
+    });
+
+    function generateClass(className, obj){
+      if(generated[className]) return;
+      generated[className] = true;
+      const children = [];
+      const fields = [];
+      const fromJsonLines = [];
+      const toJsonLines = [];
+
+      for(const key of Object.keys(obj)){
+        const value = obj[key];
+        const varName = key;
+
+        if(value === null){
+          fields.push(`  dynamic ${varName};`);
+          fromJsonLines.push(`      ${varName}: json['${key}'],`);
+          toJsonLines.push(`      '${key}': ${varName},`);
+          continue;
+        }
+        if(Array.isArray(value)){
+          if(value.length > 0 && typeof value[0] === 'object' && value[0] !== null){
+            const itemClass = capitalize(key); 
+            const type = `List<${itemClass}>?`;
+            fields.push(`  ${type} ${varName};`);
+            fromJsonLines.push(`      ${varName}: (json['${key}'] as List<dynamic>?)?.map((e) => ${itemClass}.fromJson(e)).toList(),`);
+            toJsonLines.push(`      '${key}': ${varName}?.map((e) => e.toJson()).toList(),`);
+            children.push({name: itemClass, obj: value[0]});
+          }else{
+            fields.push(`  List<dynamic>? ${varName};`);
+            fromJsonLines.push(`      ${varName}: (json['${key}'] as List<dynamic>?)?.toList(),`);
+            toJsonLines.push(`      '${key}': ${varName},`);
+          }
+          continue;
+        }
+        if(typeof value === 'object'){
+          const nestedName = capitalize(key);
+          fields.push(`  ${nestedName}? ${varName};`);
+          fromJsonLines.push(`      ${varName}: json['${key}'] != null ? ${nestedName}.fromJson(json['${key}']) : null,`);
+          toJsonLines.push(`      '${key}': ${varName}?.toJson(),`);
+          children.push({name: nestedName, obj: value});
+          continue;
+        }
+        if(typeof value === 'number'){
+          if(Number.isInteger(value)){
+            fields.push(`  int? ${varName};`);
+            fromJsonLines.push(`      ${varName}: _asInt(json['${key}']),`);
+            toJsonLines.push(`      '${key}': ${varName},`);
+          }else{
+            fields.push(`  double? ${varName};`);
+            fromJsonLines.push(`      ${varName}: _asDouble(json['${key}']),`);
+            toJsonLines.push(`      '${key}': ${varName},`);
+          }
+          continue;
+        }
+        if(typeof value === 'boolean'){
+          fields.push(`  bool? ${varName};`);
+          fromJsonLines.push(`      ${varName}: json['${key}'] == true,`);
+          toJsonLines.push(`      '${key}': ${varName},`);
+          continue;
+        }
+        fields.push(`  String? ${varName};`);
+        fromJsonLines.push(`      ${varName}: json['${key}']?.toString(),`);
+        toJsonLines.push(`      '${key}': ${varName},`);
+      }
+
+      const ctorParams = Object.keys(obj).map(k => `    this.${k},`).join('\n');
+      const code = `class ${className} {\n${fields.join('\n')}\n\n  ${className}({\n${ctorParams}\n  });\n\n  factory ${className}.fromJson(Map<String, dynamic> json) {\n    return ${className}(\n${fromJsonLines.join('\n')}\n    );\n  }\n\n  Map<String, dynamic> toJson() {\n    return {\n${toJsonLines.join('\n')}\n    };\n  }\n}\n`;
+
+      classOrder.push({name: className, code});
+      for(const ch of children){ generateClass(ch.name, ch.obj); }
+    }
+
+    function generateDart(){
+      const jsonInput = jsonInputEl.value;
+      const modelName = document.getElementById('modelName').value.trim() || 'RootModel';
+      let jsonObj;
+      try{ jsonObj = JSON.parse(jsonInput); }catch(e){ alert('JSON 解析失败'); return; }
+      classOrder = []; generated = {};
+
+      if(Array.isArray(jsonObj)){
+        if(jsonObj.length === 0){ alert('空数组无法生成'); return; }
+        generateClass(modelName, { items: jsonObj });
+      }else if(typeof jsonObj === 'object'){
+        generateClass(modelName, jsonObj);
+      }else{ alert('根类型必须是对象或数组'); return; }
+
+      const helpers = `\nint? _asInt(dynamic v){if(v==null)return null;if(v is int)return v;return int.tryParse(v.toString());}\n`+
+                      `double? _asDouble(dynamic v){if(v==null)return null;if(v is double)return v;if(v is int)return v.toDouble();return double.tryParse(v.toString());}\n`;
+
+      let output = '';
+      classOrder.forEach(c=>output+=c.code+'\n');
+      output += helpers;
+      document.getElementById('dartOutput').innerText = output;
+    }
+
+    // 显示提示框
+    function showToast(msg){
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(()=> toast.classList.remove('show'), 2000);
+    }
+
+    function copyDart(){
+      navigator.clipboard.writeText(document.getElementById('dartOutput').innerText).then(()=>{
+        showToast('已复制到剪贴板');
+      });
+    }
+
+    function downloadDart(){
+      const blob = new Blob([document.getElementById('dartOutput').innerText], {type:'text/plain'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'model.dart';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+  </script>
+</body>
+</html>
