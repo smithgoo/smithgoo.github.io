@@ -216,13 +216,16 @@
     }
 
     function downloadDart(){
-      const blob = new Blob([document.getElementById('dartOutput').innerText], {type:'text/plain'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'model.dart';
-      a.click();
-      URL.revokeObjectURL(a.href);
-    }
+  const modelName = document.getElementById('modelName').value.trim() || 'RootModel';
+  const fileName = modelName + '.dart';
+  const blob = new Blob([document.getElementById('dartOutput').innerText], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
   </script>
 </body>
 </html>
